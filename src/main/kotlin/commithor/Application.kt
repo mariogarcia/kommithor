@@ -1,6 +1,9 @@
 package commithor
 
+import java.io.File
+
 import io.ktor.routing.get
+import io.ktor.routing.route
 import io.ktor.routing.routing
 
 import io.ktor.application.Application
@@ -20,8 +23,7 @@ import io.ktor.jackson.jackson
 import io.ktor.features.ContentNegotiation
 import com.fasterxml.jackson.databind.SerializationFeature
 
-import commithor.data.slackers
-// import commithor.git.getSlackers
+import commithor.git.getSlackersFrom
 
 /**
  * Application's main entry point
@@ -39,9 +41,29 @@ fun Application.main() {
         static("/") {
             resources("static")
         }
-        get("/api") {
-            // call.respond(getSlackers())
-            call.respond(slackers)
+
+        get("/version") {
+            val version: String = environment
+                    .config
+                    .config("commithor")
+                    .property("version")
+                    .getString()
+
+            call.respond(mapOf("version" to version))
+        }
+
+        get("/slackers") {
+            val config = environment.config.config("commithor")
+
+            val tempDir: File = File(config
+                    .property("tempDir")
+                    .getString())
+
+            val repository: String = config
+                    .property("repository")
+                    .getString()
+
+            call.respond(getSlackersFrom(repository, tempDir))
         }
     }
 }

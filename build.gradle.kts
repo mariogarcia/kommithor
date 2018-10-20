@@ -1,8 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val ktor_version: String by project
+val jgit_version: String by project
 val logback_version: String by project
 val jackson_version: String by project
+val kronos_version: String by project
 
 plugins {
     application
@@ -20,7 +22,8 @@ dependencies {
     compile("ch.qos.logback:logback-classic:$logback_version")
     compile("io.ktor:ktor-jackson:$ktor_version")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
-
+    compile("org.eclipse.jgit:org.eclipse.jgit:$jgit_version")
+    compile("com.github.hotchemi:khronos:$kronos_version")
     testCompile("junit:junit:4.12")
 }
 
