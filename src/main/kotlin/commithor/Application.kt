@@ -24,6 +24,7 @@ import io.ktor.features.ContentNegotiation
 import com.fasterxml.jackson.databind.SerializationFeature
 
 import commithor.git.getSlackersFrom
+import java.text.SimpleDateFormat
 
 /**
  * Application's main entry point
@@ -34,6 +35,7 @@ fun Application.main() {
     install(ContentNegotiation) {
         jackson {
             configure(SerializationFeature.INDENT_OUTPUT, true)
+            dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
         }
     }
 
