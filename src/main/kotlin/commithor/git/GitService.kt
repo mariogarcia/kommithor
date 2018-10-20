@@ -15,12 +15,12 @@ import commithor.data.Slacker
  * @return
  * @since 1.0-SNAPSHOT
  */
-fun reduceToSlackers(map: Map<String, Int>, commit: RevCommit): Map<String, Int> {
+fun reduceToSlackers(map: Map<String, Date>, commit: RevCommit): Map<String, Date> {
     val (name, date) = getData(commit)
 
     if (Dates.yesterday > date) {
-        val counter = map.get(name)
-        val updated = if (counter != null) counter else 1
+        val previous = map.get(name)
+        val updated = if (previous != null && previous > date) previous else date
 
         return map.plus(Pair(name, updated))
     } else {
@@ -45,7 +45,7 @@ fun getData(commit: RevCommit): Pair<String, Date> {
  * @return
  * @since 1.0-SNAPSHOT
  */
-fun getSlackersFrom(repositoryAddress: String, tempDir: File):Map<String, Int> {
+fun getSlackersFrom(repositoryAddress: String, tempDir: File):Map<String, Date> {
     val git = if (tempDir.exists()) getGitFromDir(tempDir) else getGitFromUri(repositoryAddress, tempDir)
 
     val slackers = git
