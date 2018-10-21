@@ -3,6 +3,7 @@ package commithor.git
 import java.io.File
 import java.util.Date
 import khronos.Dates
+import java.time.LocalDate
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.lib.PersonIdent
@@ -48,14 +49,13 @@ fun reduceToCommiters(map: Map<String, Commiter>, commit: RevCommit): Map<String
 }
 
 fun getLastDate(previous: Date, current: Date): Date {
-    val baseDate: Date = if (previous == null) current else previous
-    val solution: Date = if (Dates.yesterday > current && current > previous) previous else current
-
-    return solution
+    return if (Dates.yesterday > current  && current > previous) current else previous
 }
 
 fun createDefaultCommiter(name: String): Commiter {
-    return Commiter(name = name, noCommits = 0, lastCommitAt = Date(), rate = 0f)
+    val yearsAgo: Date = Date(LocalDate.of(2010, 1, 1).toEpochDay())
+
+    return Commiter(name = name, noCommits = 0, lastCommitAt = yearsAgo, rate = 0f)
 }
 
 fun reduceToCommiterInfo(map: Map<String, Commiter>, commit: RevCommit): Map<String, Commiter> {
