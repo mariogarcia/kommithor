@@ -22,7 +22,7 @@ import io.ktor.http.content.resources
 import io.ktor.jackson.jackson
 import io.ktor.features.ContentNegotiation
 import com.fasterxml.jackson.databind.SerializationFeature
-
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import commithor.git.getSlackersFrom
 import java.text.SimpleDateFormat
 
@@ -35,7 +35,7 @@ fun Application.main() {
     install(ContentNegotiation) {
         jackson {
             configure(SerializationFeature.INDENT_OUTPUT, true)
-            dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+            dateFormat = SimpleDateFormat("yyyy-MM-dd")
         }
     }
 
@@ -57,6 +57,7 @@ fun Application.main() {
         get("/slackers") {
             val config = environment.config.config("commithor")
 
+
             val tempDir: File = File(config
                     .property("tempDir")
                     .getString())
@@ -65,7 +66,17 @@ fun Application.main() {
                     .property("repository")
                     .getString()
 
-            call.respond(getSlackersFrom(repository, tempDir))
+            val username: String = config
+                    .property("username")
+                    .getString()
+
+            val password: String = config
+                    .property("password")
+                    .getString()
+
+            val credentials = UsernamePasswordCredentialsProvider(username, password)
+
+            call.respond(getSlackersFrom(repository, tempDir, credentials))
         }
     }
 }

@@ -11,9 +11,9 @@ const createTemplate = () => {
           <img class='avatar' src='{{avatar}}' />
         </span>
         <span class='name'>{{name}}</span>
-        <span class='order'>{{order}}</span>
+        <span class='order'>{{noCommits}}</span>
         <span class='rate'>{{rate}}%</span>
-        <span class='behind'>{{behind}}</span>
+        <span class='behind'>{{lastCommitAt}}</span>
       </article>
     `
     return Hogan.compile(template)
@@ -34,6 +34,19 @@ const renderSlackers = (slackers) => {
     htmlListContainer.innerHTML = htmlListElements.join('')
 }
 
+
+const updateDate = (commiterList) => {
+    return commiterList.map(commiter => {
+        const lastCommit = commiter['lastCommitAt'];
+        const parsedDate = moment(lastCommit, 'YYYY-MM-DD').fromNow()
+
+        commiter['lastCommitAt'] = parsedDate
+
+        console.log('lastCommit: ', lastCommit, ' -- parsedDate: ', parsedDate)
+        return commiter
+    })
+}
+
 /**
  * Retrieve slackers from server API and then renders them
  *
@@ -42,7 +55,10 @@ const renderSlackers = (slackers) => {
  * @since 1.0-SNAPSHOT
  */
 const fetchSlackers = () => {
-    return fetch('http://localhost:5050/api')
+    return fetch('http://localhost:5050/slackers')
         .then(resp => resp.json())
+        .then(updateDate)
         .then(json => renderSlackers(json))
 }
+
+fetchSlackers()

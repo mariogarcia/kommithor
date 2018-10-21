@@ -4,19 +4,21 @@ import java.io.File
 import java.util.Date
 import khronos.Dates
 import java.time.LocalDate
+import java.time.ZoneId
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.lib.PersonIdent
+import org.eclipse.jgit.transport.CredentialsProvider
 
 import commithor.data.Commiter
+import commithor.data.md5
 
-fun selector(c: Commiter): Date = c.lastCommitAt
 /**
  * @return
  * @since 1.0-SNAPSHOT
  */
-fun getSlackersFrom(repositoryAddress: String, tempDir: File):Collection<Commiter> {
-    val git = resolveRepository(repositoryAddress, tempDir)
+fun getSlackersFrom(repositoryAddress: String, tempDir: File, credentials: CredentialsProvider):Collection<Commiter> {
+    val git = resolveRepository(repositoryAddress, tempDir, credentials)
 
     // total no of commits in the repo
     val totalCommits: Int = git.log().all()
@@ -28,11 +30,21 @@ fun getSlackersFrom(repositoryAddress: String, tempDir: File):Collection<Commite
             .call()
             .fold(mapOf(), ::reduceToCommiters)
             .map({ (key, value) ->
-                value.copy(rate = value.noCommits / totalCommits.toFloat())
+                val rate: Float = value.noCommits / totalCommits.toFloat()
+
+                value.copy(rate = "%.2f".format(rate * 100))
             })
 
-    commiters.toMutableList().sortByDescending({ selector(it) })
-    return commiters
+    val filteredList = commiters.filter({ commiter ->
+        val date = commiter.lastCommitAt.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        val isRecent = date > LocalDate.now().minusMonths(1)
+
+        isRecent
+    })
+
+    val sortableList = filteredList.toMutableList()
+    sortableList.sortBy { it.lastCommitAt }
+    return sortableList
 }
 
 fun reduceToCommiters(map: Map<String, Commiter>, commit: RevCommit): Map<String, Commiter> {
@@ -54,8 +66,9 @@ fun getLastDate(previous: Date, current: Date): Date {
 
 fun createDefaultCommiter(name: String): Commiter {
     val yearsAgo: Date = Date(LocalDate.of(2010, 1, 1).toEpochDay())
+    val avatar: String = "https://www.gravatar.com/avatar/${md5(name)}"
 
-    return Commiter(name = name, noCommits = 0, lastCommitAt = yearsAgo, rate = 0f)
+    return Commiter(name = name, noCommits = 0, lastCommitAt = yearsAgo, rate = "0", avatar = avatar)
 }
 
 fun reduceToCommiterInfo(map: Map<String, Commiter>, commit: RevCommit): Map<String, Commiter> {
@@ -84,12 +97,16 @@ fun getData(commit: RevCommit): Pair<String, Date> {
     return Pair(name, date)
 }
 
-fun resolveRepository(repositoryAddress: String, tempDir: File): Git {
-    return if (tempDir.exists()) getGitFromDir(tempDir) else getGitFromUri(repositoryAddress, tempDir)
+fun resolveRepository(repositoryAddress: String, tempDir: File, credentials: CredentialsProvider): Git {
+    return if (tempDir.exists()) getGitFromDir(tempDir) else getGitFromUri(repositoryAddress, tempDir, credentials)
 }
 
-fun getGitFromUri(uri: String, tempDir: File): Git {
-    return Git.cloneRepository()
+fun getGitFromUri(uri: String, tempDir: File, credentials: CredentialsProvider): Git {
+    val command = Git.cloneRepository()
+
+    command.setCredentialsProvider(credentials)
+
+    return command
             .setURI(uri)
             .setDirectory(tempDir)
             .setCloneAllBranches(true)

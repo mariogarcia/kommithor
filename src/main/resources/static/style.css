@@ -51,6 +51,8 @@ article.commiter {
 article > span.name {
     display: flex;
     justify-content: flex-start;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 article.slacker {
