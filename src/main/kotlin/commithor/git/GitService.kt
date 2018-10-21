@@ -9,6 +9,7 @@ import org.eclipse.jgit.lib.PersonIdent
 
 import commithor.data.Commiter
 
+fun selector(c: Commiter): Date = c.lastCommitAt
 /**
  * @return
  * @since 1.0-SNAPSHOT
@@ -29,6 +30,7 @@ fun getSlackersFrom(repositoryAddress: String, tempDir: File):Collection<Commite
                 value.copy(rate = value.noCommits / totalCommits.toFloat())
             })
 
+    commiters.toMutableList().sortByDescending({ selector(it) })
     return commiters
 }
 
