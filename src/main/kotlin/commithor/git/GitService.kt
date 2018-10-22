@@ -17,7 +17,7 @@ import commithor.data.md5
  * @return
  * @since 1.0-SNAPSHOT
  */
-fun getSlackersFrom(repositoryAddress: String, tempDir: File, credentials: CredentialsProvider):Collection<Commiter> {
+fun getSlackersFrom(repositoryAddress: String, tempDir: File, credentials: CredentialsProvider?):Collection<Commiter> {
     val git = resolveRepository(repositoryAddress, tempDir, credentials)
 
     // total no of commits in the repo
@@ -61,7 +61,9 @@ fun reduceToCommiters(map: Map<String, Commiter>, commit: RevCommit): Map<String
 }
 
 fun getLastDate(previous: Date, current: Date): Date {
-    return if (Dates.yesterday > current  && current > previous) current else previous
+    val isCurrentOlder = Dates.yesterday > current && current > previous
+
+    return if (isCurrentOlder) current else if (current > previous) current else previous
 }
 
 fun createDefaultCommiter(name: String): Commiter {
@@ -71,40 +73,29 @@ fun createDefaultCommiter(name: String): Commiter {
     return Commiter(name = name, noCommits = 0, lastCommitAt = yearsAgo, rate = "0", avatar = avatar)
 }
 
-fun reduceToCommiterInfo(map: Map<String, Commiter>, commit: RevCommit): Map<String, Commiter> {
-    val (name, date) = getData(commit)
-
-    if (map.contains(name)) {
-        val commiter = map.getOrDefault(name, createDefaultCommiter(name))
-        val noCommits = commiter.noCommits
-
-        return map?.plus(Pair(name, commiter.copy(noCommits = noCommits + 1)))
-    } else {
-        return map.plus(Pair(name, createDefaultCommiter(name)))
-    }
-}
-
 /**
  * @param commit
  * @return
  * @since 1.0-SNAPSHOT
  */
 fun getData(commit: RevCommit): Pair<String, Date> {
-    val ident = commit.getCommitterIdent()
+    val ident = commit.getAuthorIdent()
     val name = ident.getEmailAddress()
     val date = ident.getWhen()
 
     return Pair(name, date)
 }
 
-fun resolveRepository(repositoryAddress: String, tempDir: File, credentials: CredentialsProvider): Git {
+fun resolveRepository(repositoryAddress: String, tempDir: File, credentials: CredentialsProvider?): Git {
     return if (tempDir.exists()) getGitFromDir(tempDir) else getGitFromUri(repositoryAddress, tempDir, credentials)
 }
 
-fun getGitFromUri(uri: String, tempDir: File, credentials: CredentialsProvider): Git {
+fun getGitFromUri(uri: String, tempDir: File, credentials: CredentialsProvider?): Git {
     val command = Git.cloneRepository()
 
-    command.setCredentialsProvider(credentials)
+    if (credentials != null) {
+        command.setCredentialsProvider(credentials)
+    }
 
     return command
             .setURI(uri)

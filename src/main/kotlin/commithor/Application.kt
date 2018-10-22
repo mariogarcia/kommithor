@@ -26,6 +26,7 @@ import io.ktor.http.content.resources
 import io.ktor.jackson.jackson
 import io.ktor.features.ContentNegotiation
 import com.fasterxml.jackson.databind.SerializationFeature
+import org.eclipse.jgit.transport.CredentialsProvider
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import commithor.git.getSlackersFrom
 import java.text.SimpleDateFormat
@@ -75,15 +76,13 @@ fun Application.main() {
                     .property("repository")
                     .getString()
 
-            val username: String = config
-                    .property("username")
-                    .getString()
+            val username: String? = config
+                    .propertyOrNull("username")?.getString()
 
-            val password: String = config
-                    .property("password")
-                    .getString()
+            val password: String? = config
+                    .propertyOrNull("password")?.getString()
 
-            val credentials = UsernamePasswordCredentialsProvider(username, password)
+            val credentials: CredentialsProvider? = if (username != null && password != null) UsernamePasswordCredentialsProvider(username, password) else null
 
             call.respond(getSlackersFrom(repository, tempDir, credentials))
         }
